@@ -6,7 +6,7 @@ from . import networks
 from util.gramMatrix import StyleLoss
 import torchvision
 import torch.nn.functional as F
-from util.wassestein_loss import calc_gradient_penalty
+from util.wasserstein_loss import calc_gradient_penalty
 
 
 class WarpingClothModel(BaseModel):
