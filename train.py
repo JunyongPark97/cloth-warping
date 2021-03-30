@@ -8,13 +8,13 @@ from data import sgunit_train_dataset
 from models import create_model
 from util.visualizer import Visualizer
 from torch.utils.data import DataLoader
-from data import warping_cloth_dataset
+from data import sgunit_train_dataset
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()
     # data_loader = CreateDataLoader(opt)
     # dataset = data_loader.load_data()
-    training_set = warping_cloth_dataset.warpingtraindataset(opt)
+    training_set = sgunit_train_dataset.sgunittraindataset(opt)
     dataset = DataLoader(training_set, opt.batch_size, shuffle=True)
     dataset_size = len(dataset)
     print('#training images = %d' % dataset_size)

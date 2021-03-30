@@ -70,7 +70,7 @@ class BaseModel():
         lr = self.optimizers[0].param_groups[0]['lr']
         print('learning rate = %.7f' % lr)
 
-    # return visualization images. train.py will display these images, and save the images to a html
+    # return visualization images. train_cloth_warping_module.py will display these images, and save the images to a html
     def get_current_visuals(self):
         visual_ret = OrderedDict()
         for name in self.visual_names:
@@ -78,7 +78,7 @@ class BaseModel():
                 visual_ret[name] = getattr(self, name)
         return visual_ret
 
-    # return traning losses/errors. train.py will print out these errors as debugging information
+    # return traning losses/errors. train_cloth_warping_module.py will print out these errors as debugging information
     def get_current_losses(self):
         errors_ret = OrderedDict()
         for name in self.loss_names:

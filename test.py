@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # data_loader = CreateDataLoader(opt)
     # dataset = data_loader.load_data()
     test_set = sgunit_test_dataset.sgunittestdataset(opt)
-    dataset = DataLoader(test_set, batch_size=1)
+    dataset = DataLoader(test_set, batch_size=1, shuffle=True)
     dataset_size = len(dataset)
     print('#test images = %d' % dataset_size)
     model = create_model(opt)

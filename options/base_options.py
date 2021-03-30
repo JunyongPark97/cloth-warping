@@ -24,7 +24,8 @@ class BaseOptions():
         parser.add_argument('--loadSize', type=int, default=256, help='scale images to this size')
         parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
         parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
-        parser.add_argument('--input_nc', type=int, default=4, help='# of input image channels')
+        parser.add_argument('--input_nc', type=int, default=6, help='# of input image channels')
+        parser.add_argument('--input_nc_warp', type=int, default=4, help='# of input warping image channels')
         parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
@@ -38,7 +39,7 @@ class BaseOptions():
         parser.add_argument('--dataset_mode', type=str, default='sgunit_train', help='chooses how datasets are loaded. [unaligned | aligned | single]')
         # Use insta_gan as a default model
         ###############################################
-        parser.add_argument('--model', type=str, default='warping_cloth', help='chooses which model to use. insta_gan, cycle_gan, pix2pix, test')
+        parser.add_argument('--model', type=str, default='warping_cloth_transfer', help='chooses which model to use. insta_gan, cycle_gan, pix2pix, test')
         ###############################################
         parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
         parser.add_argument('--epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
