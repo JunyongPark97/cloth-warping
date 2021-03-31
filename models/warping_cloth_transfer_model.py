@@ -11,9 +11,9 @@ import torchvision
 from util.wasserstein_loss import calc_gradient_penalty
 
 
-class warpingclothtransfermodel(BaseModel):
+class WarpingClothTransfermodel(BaseModel):
     def name(self):
-        return 'warpingclothtransfermodel'
+        return 'WarpingClothTransfermodel'
 
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
@@ -26,7 +26,7 @@ class warpingclothtransfermodel(BaseModel):
         BaseModel.initialize(self, opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
-        self.loss_names = ['content_vgg', 'G_A', 'D_A']#'cycle_A',
+        self.loss_names = ['content_vgg', 'style_vgg', 'perceptual', 'G_A', 'D_A']
         # specify the images G_A'you want to save/display. The program will call base_model.get_current_visuals
         visual_names_A = ['image_mask', 'input_mask', 'warped_cloth', 'fake_image', 'final_image']
 
@@ -53,6 +53,7 @@ class warpingclothtransfermodel(BaseModel):
         if self.isTrain:
             # define loss functions
             self.criterionStyleTransfer = networks.StyleTransferLoss().to(self.device)
+            self.criterionPerceptual = networks.PerceptualLoss().to(self.device)
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan).to(self.device)
             self.criterionL1 = torch.nn.L1Loss()
             # initialize optimizers
@@ -87,18 +88,15 @@ class warpingclothtransfermodel(BaseModel):
 
         self.fake_image = self.netG_A(torch.cat([self.warped_cloth, self.image_mask], dim=1))
 
+        self.fake_image = self.fake_image.mul(self.real_image_mask)
+
         self.empty_image = torch.sub(self.real_image, self.image_mask)
         self.final_image = torch.add(self.empty_image, self.fake_image)
 
     def backward_D(self):
-        # pred_real = self.netD(self.image_mask)
-        # self.loss_D_1 = self.criterionGAN(pred_real, True)
-        #
-        # pred_fake = self.netD(self.warped_cloth.detach())
-        # self.loss_D_2 = self.criterionGAN(pred_fake, False)
-        # self.loss_D = (self.loss_D_1 + self.loss_D_2) * 0.5
-        grad_penalty_A = calc_gradient_penalty(self.netD_A, self.final_image, self.real_image)
-        self.loss_D_A = torch.mean(self.netD_A(self.final_image)) - torch.mean(self.netD_A(self.real_image)) + grad_penalty_A
+
+        grad_penalty_A = calc_gradient_penalty(self.netD_A, self.fake_image, self.image_mask)
+        self.loss_D_A = torch.mean(self.netD_A(self.fake_image)) - torch.mean(self.netD_A(self.image_mask)) + grad_penalty_A
         self.loss_D_A.backward(retain_graph=True)
 
     def backward_D_basic(self, netD, base_cloth, input_cloth, real_image, fake_image):#, rec_image
@@ -108,9 +106,6 @@ class warpingclothtransfermodel(BaseModel):
         # Fake
         pred_fake = netD(torch.cat([fake_image.detach()], dim=1))
         loss_D_fake = self.criterionGAN(pred_fake, False)
-        # Rec
-        # pred_rec = netD(torch.cat([rec_image.detach(), base_cloth], dim=1))
-        # loss_D_rec = self.criterionGAN(pred_rec, False)
         # Combined loss
         loss_D_pos = loss_D_real * 0.5
         loss_D_neg = loss_D_fake * 0.5
@@ -128,10 +123,11 @@ class warpingclothtransfermodel(BaseModel):
         # GAN loss D_B(G_B(B))
 
         self.loss_G_A = self.criterionGAN(self.netD_A(torch.cat([self.fake_image], dim=1)), True)
-        self.loss_G_L1 = self.criterionL1( self.warped_cloth, self.fake_image)
+        self.loss_G_L1 = self.criterionL1(self.warped_cloth, self.fake_image)
+        self.loss_perceptual = self.criterionPerceptual(self.fake_image, self.warped_cloth)
 
         # combined loss
-        self.loss_G = self.loss_G_A + self.loss_content_vgg + 10 * self.loss_G_L1
+        self.loss_G = self.loss_G_A + self.loss_content_vgg + self.loss_style_vgg + 10 * self.loss_G_L1 + 0.2 * self.loss_perceptual
         self.loss_G.backward(retain_graph=True)
 
     def optimize_parameters(self):

@@ -172,6 +172,20 @@ class StyleTransferLoss(nn.Module):
         return content_loss, 100000 * style_loss
 
 
+class PerceptualLoss(nn.Module):
+    def __init__(self):
+        super(PerceptualLoss, self).__init__()
+        self.loss = nn.L1Loss()
+        self.features = ['relu1_1', 'relu2_1', 'relu3_1', 'relu4_1', 'relu5_1']
+
+    def __call__(self, image_vgg_feature, fake_vgg_feature):
+        perceptual_loss = 0
+        for key in self.features:
+            perceptual_loss += self.loss(image_vgg_feature[key], fake_vgg_feature[key])
+
+        return perceptual_loss
+
+
 # Define spectral normalization layer
 # Code from Christian Cosgrove's repository
 # https://github.com/christiancosgrove/pytorch-spectral-normalization-gan/blob/master/spectral_normalization.py

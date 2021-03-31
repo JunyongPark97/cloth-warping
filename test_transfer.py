@@ -8,7 +8,7 @@ from models import create_model
 from util import util
 from util.visualizer import save_images
 from util import html
-from data import warping_cloth_test_dataset
+from data import sgunit_test_dataset
 from torch.utils.data import DataLoader
 import torchvision
 import torch
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     opt.display_id = -1   # no visdom display
     # data_loader = CreateDataLoader(opt)
     # dataset = data_loader.load_data()
-    test_set = warping_cloth_test_dataset.warpingtestdataset(opt)
+    test_set = sgunit_test_dataset.sgunittestdataset(opt)
     dataset = DataLoader(test_set, batch_size=1, shuffle=True)
     dataset_size = len(dataset)
     print('#test images = %d' % dataset_size)
@@ -49,14 +49,20 @@ if __name__ == '__main__':
         # img_path = model.get_image_paths()
         # if i % 5 == 0:
         #     print('processing (%04d)-th image... %s' % (i, img_path))
-        img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_realimagemask.png')
-        tensor_to_pil = torchvision.transforms.ToPILImage()(model.real_image_mask.cpu().squeeze_(0))
+        img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_imagemask.png')
+        tensor_to_pil = torchvision.transforms.ToPILImage()(model.image_mask.cpu().squeeze_(0))
         tensor_to_pil.save(img_path)
-        img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_clothmask.png')
-        tensor_to_pil = torchvision.transforms.ToPILImage()(model.real_cloth.cpu().squeeze_(0))
+        img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_inputmask.png')
+        tensor_to_pil = torchvision.transforms.ToPILImage()(model.input_cloth.cpu().squeeze_(0))
         tensor_to_pil.save(img_path)
         img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_warpedimage.png')
         tensor_to_pil = torchvision.transforms.ToPILImage()(model.warped_cloth.cpu().squeeze_(0))
+        tensor_to_pil.save(img_path)
+        img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_fakeimage.png')
+        tensor_to_pil = torchvision.transforms.ToPILImage()(model.fake_image.cpu().squeeze_(0))
+        tensor_to_pil.save(img_path)
+        img_path = os.path.join('./results/experiment_name/test_latest/images', f'test_{i}_finalimage.png')
+        tensor_to_pil = torchvision.transforms.ToPILImage()(model.final_image.cpu().squeeze_(0))
         tensor_to_pil.save(img_path)
 
     # save the website

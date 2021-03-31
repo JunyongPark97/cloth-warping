@@ -17,7 +17,7 @@ class WarpingClothModel(BaseModel):
         BaseModel.initialize(self, opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
-        self.loss_names = ['L1', 'gan', 'G', 'D']
+        self.loss_names = ['L1', 'perceptual', 'gan', 'G', 'D']
         # specify the images G_A'you want to save/display. The program will call base_model.get_current_visuals
         visual_names_A = ['real_image_mask', 'cloth_mask', 'warped_cloth']
 
@@ -38,6 +38,7 @@ class WarpingClothModel(BaseModel):
         if self.isTrain:
             # define loss functions
             self.criterionL1 = torch.nn.L1Loss()
+            self.criterionPerceptual = networks.PerceptualLoss().to(self.device)
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan).to(self.device)
             # initialize optimizers
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
@@ -64,8 +65,9 @@ class WarpingClothModel(BaseModel):
 
     def backward_G(self):
         self.loss_L1 = 10 * self.criterionL1(self.warped_cloth, self.image_mask)
+        self.loss_perceptual = self.criterionPerceptual(self.image_mask, self.warped_cloth)
         self.loss_gan = self.criterionGAN(self.netD(self.warped_cloth), True)
-        self.loss_G = self.loss_L1 + self.loss_gan
+        self.loss_G = self.loss_L1 + self.loss_perceptual + self.loss_gan
         self.loss_G.backward(retain_graph=True)
 
     def backward_D(self):
