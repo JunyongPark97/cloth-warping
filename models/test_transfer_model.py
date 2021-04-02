@@ -39,7 +39,7 @@ class TestTransferModel(WarpingClothTransfermodel):
 
         # assigns the model to self.netG_[suffix] so that it can be loaded
         # please see BaseModel.load_networks
-        setattr(self, 'netG' + opt.model_suffix, self.netG)
+        setattr(self, 'netG' + opt.model_suffix, self.netG_A)
 
     def set_input(self, input):
         self.real_image = input['base_image'].to(self.device)

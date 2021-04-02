@@ -29,7 +29,8 @@ class WarpingClothModel(BaseModel):
             self.model_names = ['G']
 
         # load/define networks
-        self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
+        self.VGG19 = networks.VGG19(requires_grad=False).cuda()
+        self.netG = networks.define_G(opt.input_nc_warp, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                         not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
         use_sigmoid = opt.no_lsgan
         self.netD = networks.define_D(3, opt.ndf, opt.netD,
@@ -56,6 +57,11 @@ class WarpingClothModel(BaseModel):
         self.real_cloth = input['base_cloth'].to(self.device)
         self.real_cloth_mask = input['base_cloth_mask'].to(self.device)
 
+    def get_perceptual_loss(self):
+        image_features = self.VGG19(self.image_mask)
+        warped_features = self.VGG19(self.warped_cloth)
+        return self.criterionPerceptual(image_features, warped_features)
+
     def forward(self):
         self.image_mask = self.real_image.mul(self.real_image_mask)
         self.cloth_mask = self.real_cloth.mul(self.real_cloth_mask)
@@ -65,7 +71,7 @@ class WarpingClothModel(BaseModel):
 
     def backward_G(self):
         self.loss_L1 = 10 * self.criterionL1(self.warped_cloth, self.image_mask)
-        self.loss_perceptual = self.criterionPerceptual(self.image_mask, self.warped_cloth)
+        self.loss_perceptual = self.get_perceptual_loss()
         self.loss_gan = self.criterionGAN(self.netD(self.warped_cloth), True)
         self.loss_G = self.loss_L1 + self.loss_perceptual + self.loss_gan
         self.loss_G.backward(retain_graph=True)

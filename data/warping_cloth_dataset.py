@@ -10,7 +10,7 @@ from PIL import Image
 import util.util as util
 
 
-class warpingtraindataset(BaseDataset):
+class WarpingClothDataset(BaseDataset):
     @staticmethod
     def modify_commandline_options(parser, is_train):
         return parser
@@ -77,4 +77,4 @@ class warpingtraindataset(BaseDataset):
         return len(self.train_data_bundle_paths)
 
     def name(self):
-        return 'SGUNITTrainDataset'
+        return 'WarpingClothDataset'
