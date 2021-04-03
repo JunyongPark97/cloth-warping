@@ -26,7 +26,7 @@ if __name__ == '__main__':
     opt.display_id = -1   # no visdom display
     # data_loader = CreateDataLoader(opt)
     # dataset = data_loader.load_data()
-    test_set = warping_cloth_test_dataset.warpingtestdataset(opt)
+    test_set = warping_cloth_test_dataset.WarpingClothTestDataset(opt)
     dataset = DataLoader(test_set, batch_size=1, shuffle=True)
     dataset_size = len(dataset)
     print('#test images = %d' % dataset_size)

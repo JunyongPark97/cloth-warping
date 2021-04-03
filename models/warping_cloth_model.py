@@ -19,7 +19,7 @@ class WarpingClothModel(BaseModel):
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['L1', 'perceptual', 'gan', 'G', 'D']
         # specify the images G_A'you want to save/display. The program will call base_model.get_current_visuals
-        visual_names_A = ['real_image_mask', 'cloth_mask', 'warped_cloth']
+        visual_names_A = ['real_image_mask', 'cloth_mask', 'warped_cloth', 'image_mask']
 
         self.visual_names = visual_names_A
         # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
@@ -71,7 +71,7 @@ class WarpingClothModel(BaseModel):
 
     def backward_G(self):
         self.loss_L1 = 10 * self.criterionL1(self.warped_cloth, self.image_mask)
-        self.loss_perceptual = self.get_perceptual_loss()
+        self.loss_perceptual = 2 * self.get_perceptual_loss()
         self.loss_gan = self.criterionGAN(self.netD(self.warped_cloth), True)
         self.loss_G = self.loss_L1 + self.loss_perceptual + self.loss_gan
         self.loss_G.backward(retain_graph=True)

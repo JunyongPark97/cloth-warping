@@ -10,7 +10,7 @@ from PIL import Image
 import util.util as util
 
 
-class warpingtestdataset(BaseDataset):
+class WarpingClothTestDataset(BaseDataset):
     @staticmethod
     def modify_commandline_options(parser, is_train):
         return parser
@@ -34,7 +34,7 @@ class warpingtestdataset(BaseDataset):
     def __init__(self, opt):
         self.opt = opt
         self.batch_size = opt.batch_size
-        self.root = opt.test_dataroot
+        self.root = opt.dataroot
         self.batch_size = opt.batch_size
         self.dir_clothes = os.path.join(self.root, 'test_clothes')
         self.dir_images = os.path.join(self.root, 'test_images')
