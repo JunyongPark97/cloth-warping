@@ -69,10 +69,12 @@ class WarpingClothModel(BaseModel):
         #cloth warping fake
         self.warped_cloth = self.netG(torch.cat([self.real_image_mask, self.cloth_mask], dim=1))
 
+        self.warped_cloth = self.warped_cloth.mul(self.real_image_mask)
+
     def backward_G(self):
         self.loss_L1 = 10 * self.criterionL1(self.warped_cloth, self.image_mask)
         self.loss_perceptual = 2 * self.get_perceptual_loss()
-        self.loss_gan = self.criterionGAN(self.netD(self.warped_cloth), True)
+        self.loss_gan = 2 * self.criterionGAN(self.netD(self.warped_cloth), True)
         self.loss_G = self.loss_L1 + self.loss_perceptual + self.loss_gan
         self.loss_G.backward(retain_graph=True)
 

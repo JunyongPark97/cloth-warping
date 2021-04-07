@@ -49,3 +49,5 @@ class TestModel(WarpingClothModel):
 
         # cloth warping fake
         self.warped_cloth = self.netG(torch.cat([self.real_image_mask, self.cloth_mask], dim=1))
+
+        self.warped_cloth = self.warped_cloth.mul(self.real_image_mask)
