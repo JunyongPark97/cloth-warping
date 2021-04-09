@@ -53,10 +53,11 @@ class TestTransferModel(WarpingClothTransfermodel):
         self.image_mask = self.real_image.mul(self.real_image_mask)
         self.cloth_mask = self.real_cloth.mul(self.real_cloth_mask)
         self.input_mask = self.input_cloth.mul(self.input_cloth_mask)
+
         self.warped_cloth = self.netG_warp(torch.cat([self.real_image_mask, self.input_mask], dim=1))
+        self.warped_cloth = self.warped_cloth.mul(self.real_image_mask)
 
         self.fake_image = self.netG_A(torch.cat([self.warped_cloth, self.image_mask], dim=1))
-
         self.fake_image = self.fake_image.mul(self.real_image_mask)
 
         self.empty_image = torch.sub(self.real_image, self.image_mask)

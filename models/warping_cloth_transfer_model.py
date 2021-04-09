@@ -26,7 +26,7 @@ class WarpingClothTransfermodel(BaseModel):
         BaseModel.initialize(self, opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
-        self.loss_names = ['content_vgg', 'style_vgg', 'perceptual', 'G_A', 'D_A']
+        self.loss_names = ['content_vgg', 'perceptual', 'L1', 'G_A', 'D_A']
         # specify the images G_A'you want to save/display. The program will call base_model.get_current_visuals
         visual_names_A = ['image_mask', 'input_mask', 'warped_cloth', 'fake_image', 'final_image']
 
@@ -45,7 +45,7 @@ class WarpingClothTransfermodel(BaseModel):
         self.netG_warp = networks.define_G(opt.input_nc_warp, opt.output_nc, opt.ngf, opt.netG, opt.norm,
                                         opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
         self.netG_warp.module.load_state_dict(torch.load(os.path.join("./checkpoints/warping_model", 'latest_net_G_warp.pth')))
-        self.vgg19 = networks.VGG19(requires_grad=False).cuda()
+        self.VGG19 = networks.VGG19(requires_grad=False).cuda()
         use_sigmoid = opt.no_lsgan
         self.netD_A = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
                                          opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain,
@@ -75,16 +75,23 @@ class WarpingClothTransfermodel(BaseModel):
         self.input_cloth_mask = input['input_cloth_mask'].to(self.device)
 
     def get_vgg_loss(self):
-        image_features = self.vgg19(self.image_mask)
-        input_features = self.vgg19(self.input_mask)
-        fake_features = self.vgg19(self.fake_image)
+        image_features = self.VGG19(self.image_mask)
+        input_features = self.VGG19(self.input_mask)
+        fake_features = self.VGG19(self.fake_image)
         return self.criterionStyleTransfer(image_features, input_features, fake_features)
+
+    def get_perceptual_loss(self):
+        warped_features = self.VGG19(self.warped_cloth)
+        fake_features = self.VGG19(self.fake_image)
+        return self.criterionPerceptual(warped_features, fake_features)
 
     def forward(self):
         self.image_mask = self.real_image.mul(self.real_image_mask)
         self.cloth_mask = self.real_cloth.mul(self.real_cloth_mask)
         self.input_mask = self.input_cloth.mul(self.input_cloth_mask)
         self.warped_cloth = self.netG_warp(torch.cat([self.real_image_mask, self.input_mask], dim=1))
+
+        self.warped_cloth = self.warped_cloth.mul(self.real_image_mask)
 
         self.fake_image = self.netG_A(torch.cat([self.warped_cloth, self.image_mask], dim=1))
 
@@ -114,20 +121,19 @@ class WarpingClothTransfermodel(BaseModel):
         loss_D.backward()
         return loss_D
 
-    # def backward_D_A(self):
-    #     self.loss_D_A = self.backward_D_basic(self.netD_A, self.cloth_mask, self.input_mask, self.image_mask, self.fake_image)
-
     def backward_G(self):
-        # GAN loss D_A(G_A(A))
+
+        # get content loss + get style loss
         self.loss_content_vgg, self.loss_style_vgg = self.get_vgg_loss()
-        # GAN loss D_B(G_B(B))
+
+        # get perceptual loss
+        self.loss_perceptual = self.get_perceptual_loss()
 
         self.loss_G_A = self.criterionGAN(self.netD_A(torch.cat([self.fake_image], dim=1)), True)
-        self.loss_G_L1 = self.criterionL1(self.warped_cloth, self.fake_image)
-        self.loss_perceptual = self.criterionPerceptual(self.fake_image, self.warped_cloth)
+        self.loss_L1 = self.criterionL1(self.warped_cloth, self.fake_image)
 
         # combined loss
-        self.loss_G = self.loss_G_A + self.loss_content_vgg + self.loss_style_vgg + 10 * self.loss_G_L1 + 0.2 * self.loss_perceptual
+        self.loss_G = self.loss_G_A + 2 * self.loss_content_vgg + 10 * self.loss_L1 + 2 * self.loss_perceptual
         self.loss_G.backward(retain_graph=True)
 
     def optimize_parameters(self):
@@ -139,7 +145,7 @@ class WarpingClothTransfermodel(BaseModel):
         self.backward_G()
         self.optimizer_G.step()
         # D_A and D_B
-        self.set_requires_grad([self.netD_A, self.netG_warp], True)
+        self.set_requires_grad([self.netD_A], True)
         self.optimizer_D.zero_grad()
         self.backward_D()
         self.optimizer_D.step()
